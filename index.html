@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>molten</title>
+    <script>
+      // Show errors on screen. Phones have no console, and a failed load
+      // otherwise looks like a title screen that ignores taps.
+      function showError(msg) {
+        var el = document.getElementById('error')
+        if (!el) {
+          el = document.createElement('pre')
+          el.id = 'error'
+          document.body.appendChild(el)
+        }
+        el.textContent += msg + '\n'
+      }
+      window.addEventListener('error', function (e) {
+        showError(e.message + (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : ''))
+      })
+      window.addEventListener('unhandledrejection', function (e) {
+        showError('promise: ' + (e.reason && e.reason.message || e.reason))
+      })
+
+      // Input diagnostics, shown only with ?diag in the URL (for example on
+      // the direct html-classic.itch.zone link). Counts input events as early
+      // as possible (capture phase, before the game script runs) and shows
+      // them with the game state. main.js sets window.__diag.loaded, .state
+      // and .frames.
+      window.__diag = { loaded: false, state: '-', frames: 0, events: {} }
+      if (/[?&]diag\b/.test(location.search)) {
+        ;['pointerdown', 'pointerup', 'touchstart', 'touchend', 'mousedown', 'click'].forEach(function (type) {
+          window.addEventListener(type, function (e) {
+            var d = window.__diag
+            d.events[type] = (d.events[type] || 0) + 1
+            d.lastTarget = (e.target && (e.target.id || e.target.tagName)) || '?'
+            d.lastPointer = e.pointerType || d.lastPointer
+          }, { capture: true, passive: true })
+        })
+        setInterval(function () {
+          var d = window.__diag
+          var el = document.getElementById('diag')
+          if (!el) {
+            if (!document.body) return
+            el = document.createElement('pre')
+            el.id = 'diag'
+            document.body.appendChild(el)
+            var c = document.createElement('canvas')
+            d.webgl2 = !!(c.getContext && c.getContext('webgl2'))
+          }
+          var ev = Object.keys(d.events).map(function (k) { return k + '=' + d.events[k] }).join(' ') || 'none'
+          el.textContent = 'loaded=' + d.loaded + ' state=' + d.state + ' frames=' + d.frames +
+            ' webgl2=' + d.webgl2 + '\nevents: ' + ev + '\nlast: ' + d.lastTarget + ' ' + (d.lastPointer || '') +
+            '\n' + navigator.userAgent
+        }, 250)
+      }
+    </script>
+  </head>
+  <body>
+    <div id="stage">
+      <div id="time" class="hidden">0</div>
+      <div id="charges" class="hidden"><span></span><span></span><span></span></div>
+
+      <div id="title-screen" class="overlay">
+        <h1>molten</h1>
+        <p class="hint keys-only">W A S D or arrows to drift</p>
+        <p class="hint keys-only">space to push</p>
+        <p class="hint touch-only">drag anywhere to drift</p>
+        <p class="hint touch-only">double tap to push</p>
+        <p class="prompt keys-only">press any key</p>
+        <p class="prompt touch-only">tap to start</p>
+      </div>
+
+      <div id="over-screen" class="overlay hidden">
+        <p class="hint">you drifted for</p>
+        <p id="final-time">0</p>
+        <p class="hint">seconds</p>
+        <button id="again" type="button">go again</button>
+        <p class="hint small keys-only">space / enter</p>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
