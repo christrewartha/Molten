@@ -1,4 +1,4 @@
-// The lava lamp: dark liquid lit by a warm bulb at the bottom, with glass
+// The lava lamp: dark liquid lit by a bulb at the bottom, with glass
 // highlights, slowly drifting specks, and the wax from the field pass
 // (blobs.js) cut at the threshold and shaded as soft glowing wax.
 //
@@ -34,6 +34,9 @@ const fragmentShader = /* glsl */ `
   uniform vec2 uHeat;        // radius, wake
   uniform vec3 uPlayerShape; // radius x, radius y, merge field strength (0 = none)
   uniform vec3 uPlayerColor;
+  uniform vec3 uLiquidTop;    // liquid colour at the top of the lamp
+  uniform vec3 uLiquidBottom; // liquid colour at the bottom
+  uniform vec3 uBulb;         // bulb glow from below
   uniform float uMergeReach;
   varying vec2 vWorld;
 
@@ -52,11 +55,11 @@ const fragmentShader = /* glsl */ `
   vec3 liquid(vec2 w) {
     vec2 uv = w / uHalf; // -1..1
     float up = uv.y * 0.5 + 0.5;
-    vec3 col = mix(vec3(0.24, 0.07, 0.20), vec3(0.08, 0.04, 0.14), smoothstep(0.0, 1.0, up));
+    vec3 col = mix(uLiquidBottom, uLiquidTop, smoothstep(0.0, 1.0, up));
 
-    // Warm bulb glow from below.
+    // Bulb glow from below.
     vec2 b = (uv - vec2(0.0, -1.2)) * vec2(0.9, 1.5);
-    col += vec3(0.50, 0.20, 0.10) * exp(-dot(b, b)) * 0.55;
+    col += uBulb * exp(-dot(b, b)) * 0.55;
 
     // Slow currents in the liquid.
     float y = w.y + uScroll * 0.6;
@@ -134,7 +137,7 @@ const fragmentShader = /* glsl */ `
     }
 
     vec3 col = liquid(wl);
-    col += vec3(1.0, 0.55, 0.3) * heat * 0.05;
+    col += uPlayerColor * heat * 0.05;
 
     // Soft glow of the wax on the liquid around it.
     // Hazard wax only, so the player's field does not glow on its own.
@@ -193,6 +196,9 @@ export function createLamp(fieldTexture) {
       uHeat: { value: new THREE.Vector2(PLAYER.heat.radius, PLAYER.heat.wake) },
       uPlayerShape: { value: new THREE.Vector3(1, 1, 0) },
       uPlayerColor: { value: new THREE.Color(PLAYER.color) },
+      uLiquidTop: { value: new THREE.Color(0x140a24) },
+      uLiquidBottom: { value: new THREE.Color(0x3d1233) },
+      uBulb: { value: new THREE.Color(0x80331a) },
       uMergeReach: { value: PLAYER.merge.reach },
     },
     depthTest: false,

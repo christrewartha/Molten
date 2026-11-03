@@ -1,9 +1,9 @@
 import './style.css'
 import * as THREE from 'three'
-import { WORLD, PLAYER, MILESTONE_INTERVAL, PUSH, DIFFICULTY } from './config.js'
+import { WORLD, PLAYER, MILESTONE_INTERVAL, PUSH, DIFFICULTY, PALETTE_SHIFT } from './config.js'
 import { createBlob, updateBlob, blobOutline } from './shapes.js'
 import { ellipseHitsPolygon } from './collision.js'
-import { Director, speedAt } from './director.js'
+import { Director, speedAt, paletteLookAt } from './director.js'
 import { createBlobField, FIELD_THRESHOLD } from './blobs.js'
 import { createLamp } from './lamp.js'
 import { createPlayerBlob } from './player.js'
@@ -201,6 +201,7 @@ const DEV_START = import.meta.env.DEV ? Number(params.get('start')) || 0 : 0
 const music = new Music()
 let state = 'title' // title | playing | over
 let runTime = 0 // seconds survived this run
+let look = null // eased palette colours (see paletteLookAt)
 let overTime = 0 // seconds since game over
 let timeScale = 1
 let scroll = 0
@@ -464,6 +465,14 @@ function update(dt, elapsed) {
   pu.uRadii.value.set(prx, pry)
   pu.uDeform.value.set(player.dx, player.dy)
   pu.uTime.value = elapsed
+  // Ease the palette colours toward the run's palette (see PALETTE_SHIFT.glide).
+  const target = paletteLookAt(runTime)
+  if (!look) look = target
+  const ease = 1 - Math.exp(-dt / PALETTE_SHIFT.glide)
+  for (const key in look) look[key] = look[key].map((v, i) => v + (target[key][i] - v) * ease)
+  const towardWhite = (k) => look.tint.map((v) => v + (1 - v) * k)
+  pu.uColor.value.setRGB(...towardWhite(PLAYER.tint.edge))
+  pu.uCore.value.setRGB(...towardWhite(PLAYER.tint.core))
   blobField.sync(shapes)
   pushWave.update(dt)
   renderCharges()
@@ -480,6 +489,10 @@ function update(dt, elapsed) {
   u.uPlayer.value.set(player.x, player.y, shown)
   u.uPlayerShape.value.set(prx, pry, shown > 0 ? PLAYER.merge.strength * FIELD_THRESHOLD : 0)
   u.uPlayerVel.value.set(player.mvx, player.mvy)
+  u.uPlayerColor.value.setRGB(...towardWhite(PLAYER.tint.bridge))
+  u.uLiquidTop.value.setRGB(...look.top)
+  u.uLiquidBottom.value.setRGB(...look.bottom)
+  u.uBulb.value.setRGB(...look.bulb)
 }
 
 // ---- loop ----

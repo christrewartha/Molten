@@ -15,7 +15,15 @@ export const PLAYER = {
   speed: 6,           // units per second at full input
   response: 12,       // how quickly velocity follows input (higher = snappier)
   startY: -5.5,
-  color: 0xfff1e0,    // pale hot wax
+  color: 0xfff1e0,    // fallback pale hot wax (the run colour replaces it)
+  // The player is the hottest wax in the lamp. It takes the average colour of
+  // the current palette, mixed toward white: a white-hot core and a brighter
+  // edge and halo in the palette colour.
+  tint: {
+    core: 0.78,       // core: fraction mixed toward white
+    edge: 0.22,       // edge and halo: fraction mixed toward white
+    bridge: 0.5,      // colour that merging blobs blend toward
+  },
   // The wax lags behind when the player speeds up or slows down. A spring
   // pulls the stretch toward -acceleration × gain, so a steady speed gives
   // the normal blob, with a little jelly overshoot.
@@ -68,27 +76,59 @@ export const BLOB = {
 }
 
 // Wax colours. Merged or overlapping blobs blend their colours.
-export const PALETTES = {
-  // Deep, warm and rich: the start of a run.
-  rich: [
-    { color: 0x9a3fe0 }, // violet
-    { color: 0xc4203f }, // garnet
-    { color: 0xffa21f }, // amber
-    { color: 0xd23f95 }, // magenta plum
-    { color: 0xe8611c }, // burnt orange
-  ],
-  // Brighter jewel tones for later in a run.
-  jewel: [
-    { color: 0xc77dff }, // orchid
-    { color: 0xff5c8a }, // rose
-    { color: 0xffcf4a }, // gold
-    { color: 0xff8a5c }, // coral
-    { color: 0x8a6bff }, // amethyst
-  ],
-}
+// Each palette is one narrow colour family, so the blobs on screen look
+// related. A run moves through the palettes in order: each one holds, then
+// fades into the next. Neighbouring palettes are neighbouring hues, so the
+// fade never puts clashing colours together.
+//
+// Each palette also sets the liquid: a deep, dark version of the complementary
+// hue (top and bottom of the lamp, and the bulb glow from below). It is dark
+// so the wax still glows against it.
+export const PALETTES = [
+  { name: 'ember',
+    liquid: { top: 0x050a1c, bottom: 0x0d1f3d, bulb: 0x264d8c }, // midnight blue
+    colors: [
+      { color: 0xe8611c }, // burnt orange
+      { color: 0xff8a2a }, // tangerine
+      { color: 0xffa21f }, // amber
+      { color: 0xd9572b }, // copper
+      { color: 0xffb347 }, // apricot
+    ] },
+  { name: 'garnet',
+    liquid: { top: 0x040f1a, bottom: 0x0a2933, bulb: 0x1f6673 }, // deep teal
+    colors: [
+      { color: 0xc4203f }, // garnet
+      { color: 0xe0403a }, // vermilion
+      { color: 0xff6f61 }, // coral
+      { color: 0xd9304f }, // crimson
+      { color: 0xff5a4a }, // ember red
+    ] },
+  { name: 'rose',
+    liquid: { top: 0x05120f, bottom: 0x0d2b1f, bulb: 0x2e6b47 }, // bottle green
+    colors: [
+      { color: 0xd23f95 }, // magenta plum
+      { color: 0xff5c8a }, // rose
+      { color: 0xe0559f }, // orchid pink
+      { color: 0xc23a7a }, // mulberry
+      { color: 0xff7eb0 }, // flamingo
+    ] },
+  { name: 'violet',
+    liquid: { top: 0x140c05, bottom: 0x33240d, bulb: 0x7a5a1f }, // dark bronze
+    colors: [
+      { color: 0x9a3fe0 }, // violet
+      { color: 0xc77dff }, // orchid
+      { color: 0x8a6bff }, // amethyst
+      { color: 0xb05ce8 }, // lilac
+      { color: 0xa54fd0 }, // purple
+    ] },
+]
 
-// Time (seconds) over which the jewel palette fades in.
-export const PALETTE_SHIFT = { start: 45, end: 120 }
+// Palette timing (seconds). Each palette holds for `hold`, then fades into the
+// next over `fade`. After the last palette the order reverses (ping-pong), so
+// a long run keeps changing and every fade is between neighbouring hues.
+// The player and liquid colours also ease toward the palette over `glide`
+// seconds, so a new game fades back to the first palette instead of jumping.
+export const PALETTE_SHIFT = { hold: 40, fade: 20, glide: 1.5 }
 
 export const DIFFICULTY = {
   baseSpeed: 2.0,          // shape speed at t = 0, units per second

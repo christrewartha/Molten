@@ -1,6 +1,7 @@
-// The player: a blob of pale, hot wax. It is shaded like the hazard wax,
-// with a soft rim light and glow so it stands out from them. The edge
-// wobbles a little.
+// The player: the hottest blob of wax in the lamp. It takes the current
+// palette colour, but with a white-hot core, a soft rim light and a glow, so
+// it stands out from the hazard wax. main.js sets uColor (edge and halo) and
+// uCore (centre) each frame. The edge wobbles a little.
 //
 // uDeform (world units, direction × amount) bends the outline. It points
 // where the wax lags behind: the blob stretches toward it with a tail and
@@ -21,7 +22,8 @@ const vertexShader = /* glsl */ `
 `
 
 const fragmentShader = /* glsl */ `
-  uniform vec3 uColor;
+  uniform vec3 uColor; // edge and halo
+  uniform vec3 uCore;  // centre
   uniform vec2 uRadii;
   uniform vec2 uDeform;
   uniform float uTime;
@@ -46,7 +48,8 @@ const fragmentShader = /* glsl */ `
     // Domed wax: bright core, lit from the bulb below, soft highlight.
     float thick = sqrt(max(0.0, 1.0 - d * d));
     vec3 n = normalize(vec3(dir * d, max(thick, 0.2)));
-    vec3 c = uColor * (0.72 + 0.32 * thick);
+    // White-hot core that shades out to the palette colour at the edge.
+    vec3 c = mix(uColor, uCore, smoothstep(0.15, 0.95, thick)) * (0.82 + 0.22 * thick);
     c *= 0.85 + 0.3 * max(dot(n, normalize(vec3(0.0, -0.7, 0.7))), 0.0);
     vec3 hv = normalize(normalize(vec3(-0.4, 0.6, 0.7)) + vec3(0.0, 0.0, 1.0));
     c += vec3(1.0) * pow(max(dot(n, hv), 0.0), 24.0) * 0.45;
@@ -64,6 +67,7 @@ export function createPlayerBlob(color) {
     fragmentShader,
     uniforms: {
       uColor: { value: new THREE.Color(color) },
+      uCore: { value: new THREE.Color(color) },
       uRadii: { value: new THREE.Vector2(1, 1) },
       uDeform: { value: new THREE.Vector2(0, 0) },
       uTime: { value: 0 },

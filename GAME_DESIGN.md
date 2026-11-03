@@ -51,7 +51,9 @@ The gameplay must be calm and easy to understand. The visual style is the most i
 - **Decided** – The player object is an oval blob of wax (see below). (Before 2026-10-11, it was a plain oval, marked as temporary.)
 - **Proposed** – Oval radii: 0.3 units (horizontal), 0.42 units (vertical). (tunable)
 - **Decided** – The player object looks like a blob of wax, like the shapes. It changes shape when it speeds up or slows down. At a steady speed, it goes back to its normal shape.
-- **Proposed** – The wax is pale cream (#FFF1E0) and opaque. The centre is brighter than the edge. It is lit from below, like the shapes, and has a soft highlight at the top left. A thin rim light and a faint glow make it different from the shapes. The edge wobbles a little.
+- **Decided** – The player is the hottest wax in the lamp. It has the colour of the current palette (see 6.3), but it is brighter than the shapes. The centre is almost white ("white hot"). (Before 2026-11-03, the wax was always pale cream, #FFF1E0. It did not match the narrow palettes.)
+- **Proposed** – The player colour is the average colour of the current palette. It changes smoothly with the palette fade. Centre: 78% mixed toward white. Edge and glow: 22% mixed toward white. Where a blob merges with the player, the colour blends toward 50% mixed toward white. (tunable)
+- **Proposed** – The wax is opaque. The centre is brighter than the edge. It is lit from below, like the shapes, and has a soft highlight at the top left. A thin rim light and a faint glow make it different from the shapes. The edge wobbles a little.
 - **Proposed** – Shape change: the wax lags behind changes in movement. (tunable)
   - The stretch is a vector. A spring pulls it toward −(acceleration) × 0.008. Spring stiffness: 120. Damping: 8. Thus, the blob wobbles a little before it becomes still. Maximum stretch: 0.35.
   - The acceleration comes from the actual movement. Thus, the blob also splats a little when it stops against an edge of the play area.
@@ -61,7 +63,7 @@ The gameplay must be calm and easy to understand. The visual style is the most i
 - **Proposed** – Heat haze: (tunable)
   - The liquid near the player bends outward a little (like a lens) and shimmers. The area is a soft circle with a radius of approximately 0.95 units.
   - Behind the player, the area stretches into a short wake. The wake length grows with the speed.
-  - The liquid in the area is a little warmer (orange) in colour.
+  - The liquid in the area takes a little of the player colour.
   - Only the liquid bends. The shapes do not bend, so they always show their true position.
 - **Proposed** – Start position: horizontal centre, 5.5 units below the centre.
 - **Proposed** – The player object can move in the full play area. It cannot move out of the play area.
@@ -264,8 +266,10 @@ The visual style is the most important part of the game.
 ### 6.1 Lava lamp look
 
 - **Decided** – The game must look like a lava lamp. The shapes are soft, liquid blobs of wax that float in the lamp liquid. (Before 2026-10-11, the game looked like coloured films on a light box. It was changed because that look did not suit the relaxed mood.)
-- **Proposed** – The liquid is dark: deep purple at the top, warm plum at the bottom.
-- **Proposed** – A warm orange glow comes from the bottom edge, like the bulb of the lamp.
+- **Decided** – The liquid colour is complementary to the wax colour, and it changes with the palette (see 6.3 and 6.4). For example, orange wax floats in midnight blue liquid. (Before 2026-11-03, the liquid was always deep purple at the top and warm plum at the bottom, with a warm orange bulb glow.)
+- **Proposed** – The liquid is very dark, so the wax glows against it. It is darker at the top than at the bottom.
+- **Proposed** – A glow comes from the bottom edge, like the bulb of the lamp. The glow has the hue of the liquid.
+- **Proposed** – The liquid and player colours move toward the palette colours over 1.5 s. Thus, at a new game, the colours fade back to the first palette. They do not change suddenly. (tunable)
 - **Proposed** – The liquid has slow, faint currents (soft noise).
 - **Proposed** – Small, faint specks float in the liquid. They scroll down at approximately the speed of an average shape (85% of the current shape speed, see 4). This shows the vertical movement. At game over, the scroll slows down with the shapes.
 - **Proposed** – Soft vertical highlights near the left and right edges look like the glass of the lamp. The sides are a little darker than the centre.
@@ -295,39 +299,35 @@ Technical note for implementation ("metaballs"):
 ### 6.3 Visual progression
 
 - **Proposed** – The game starts with the plain lava lamp look.
-- **Decided** – The colours change slowly while the player progresses. The stages are:
-  1. Rich colours: deep, warm tones (violet, garnet, amber and similar). (Before 2026-10-11, this stage used primary colours. They did not look good on the dark liquid.)
-  2. Jewel colours: brighter tones in the same warm family.
-  3. Psychedelic motifs inspired by the 1970s. (Postponed. See 6.5.)
+- **Decided** – The colours change slowly while the player progresses. At one time, the blobs use one narrow colour family. Thus, the blobs on the screen look related and the look is calm. (Before 2026-11-03, two palettes each had all the warm colours together. The mix was too strong.)
+- **Decided** – The colour families come in this order: ember (orange), garnet (red), rose (pink), violet (purple). After violet, the order reverses (rose, garnet, ember) and then repeats. Thus, a long run continues to change, and a change is always between neighbouring colours.
 - **Proposed** – The time survived causes the change.
-- **Proposed** – From 45 s to 120 s, the chance that a new pattern uses a jewel colour increases smoothly from 0% to 100%. Thus, the two palettes mix during the change. There is no sudden change.
+- **Proposed** – Each family holds for 40 s. Then, during 20 s, the chance that a new pattern uses the next family increases smoothly from 0% to 100%. Thus, the two families mix during the change. There is no sudden change. (tunable)
+- **Open** – Psychedelic motifs inspired by the 1970s. (Postponed. See 6.5.)
 
 ### 6.4 Colour palettes
 
 - **Decided** – The colours are luxuriant: rich purples, dark reds, ambers and similar warm tones. Do not use plain primary colours.
 - **Proposed** – The palettes below are a first version. They will change after review.
 - **Proposed** – All colours stay in one warm family (purple, red, orange, gold), so merged blobs blend well. Avoid cool greens and teals: a test showed that they clash with the warm colours.
+- **Proposed** – The colours in one palette are near the same hue. They are different in lightness and saturation.
 - **Proposed** – The colours must be bright enough to glow against the dark liquid.
 
-Rich palette (stage 1):
+| Palette | Colours |
+|---------|---------|
+| Ember   | Burnt orange #E8611C, tangerine #FF8A2A, amber #FFA21F, copper #D9572B, apricot #FFB347 |
+| Garnet  | Garnet #C4203F, vermilion #E0403A, coral #FF6F61, crimson #D9304F, ember red #FF5A4A |
+| Rose    | Magenta plum #D23F95, rose #FF5C8A, orchid pink #E0559F, mulberry #C23A7A, flamingo #FF7EB0 |
+| Violet  | Violet #9A3FE0, orchid #C77DFF, amethyst #8A6BFF, lilac #B05CE8, purple #A54FD0 |
 
-| Colour        | Value   |
-|---------------|---------|
-| Violet        | #9A3FE0 |
-| Garnet        | #C4203F |
-| Amber         | #FFA21F |
-| Magenta plum  | #D23F95 |
-| Burnt orange  | #E8611C |
+Liquid colours (dark complementary hues):
 
-Jewel palette (stage 2):
-
-| Colour   | Value   |
-|----------|---------|
-| Orchid   | #C77DFF |
-| Rose     | #FF5C8A |
-| Gold     | #FFCF4A |
-| Coral    | #FF8A5C |
-| Amethyst | #8A6BFF |
+| Palette | Liquid          | Top     | Bottom  | Bulb glow |
+|---------|-----------------|---------|---------|-----------|
+| Ember   | Midnight blue   | #050A1C | #0D1F3D | #264D8C   |
+| Garnet  | Deep teal       | #040F1A | #0A2933 | #1F6673   |
+| Rose    | Bottle green    | #05120F | #0D2B1F | #2E6B47   |
+| Violet  | Dark bronze     | #140C05 | #33240D | #7A5A1F   |
 
 ### 6.5 Later items
 
@@ -383,3 +383,6 @@ Jewel palette (stage 2):
 | 2026-10-11 | New name: "Molten" (was "Dodgy Shapes"). The old name did not fit the relaxed lava lamp mood. |
 | 2026-10-11 | Mobile fixes: older-browser build target, audio can fail without blocking the game, on-screen error box, ?diag input diagnostics. Known problem: no touch input in the itch.io page on iPhone; the description links to the direct game file. |
 | 2026-10-14 | Blobs merge visually with the player when it comes near (the hit area does not change). At game over, the blob that hit the player absorbs it during 1.4 s. The game-over screen comes later (1.8 s). |
+| 2026-11-03 | Narrow colour palettes. Four families (ember, garnet, rose, violet) replace "rich" and "jewel". Each family holds for 40 s, then fades into the next over 20 s. After violet, the order reverses. |
+| 2026-11-03 | The player takes the colour of the current palette, with a white-hot centre and a brighter edge and glow. It replaces the fixed pale cream. |
+| 2026-11-03 | The liquid colour is complementary to the wax and changes with the palette: midnight blue, deep teal, bottle green, dark bronze. The bulb glow has the hue of the liquid. Colours fade back to the first palette at a new game. |

@@ -24,9 +24,52 @@ export function gapAt(t) {
   return Math.max(DIFFICULTY.minGap, DIFFICULTY.baseGap / (1 + DIFFICULTY.gapShrink * (t / 60)))
 }
 
+// Palette index for step n of the ping-pong sequence 0, 1, 2, 3, 2, 1, 0, 1, ...
+function paletteAt(n) {
+  const last = PALETTES.length - 1
+  if (last === 0) return 0
+  const m = n % (2 * last)
+  return m <= last ? m : 2 * last - m
+}
+
+// During the fade, the chance that a new pattern uses the next palette
+// rises smoothly from 0% to 100%, so there is no sudden change.
 function pickColor(t) {
-  const jewelChance = smoothstep(PALETTE_SHIFT.start, PALETTE_SHIFT.end, t)
-  return pick(Math.random() < jewelChance ? PALETTES.jewel : PALETTES.rich)
+  const { hold, fade } = PALETTE_SHIFT
+  const step = Math.floor(t / (hold + fade))
+  const local = t - step * (hold + fade)
+  const nextChance = smoothstep(hold, hold + fade, local)
+  const n = Math.random() < nextChance ? step + 1 : step
+  return pick(PALETTES[paletteAt(n)].colors)
+}
+
+const hexToRgb = (hex) => [((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255]
+const lerpRgb = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k)
+
+// The smooth look of each palette, as [r, g, b] values in 0..1:
+// tint (average wax colour, used by the player) and the liquid colours.
+const paletteLooks = PALETTES.map(({ colors, liquid }) => {
+  const tint = colors.map(({ color }) => hexToRgb(color))
+    .reduce((s, c) => s.map((v, i) => v + c[i] / colors.length), [0, 0, 0])
+  return {
+    tint,
+    top: hexToRgb(liquid.top),
+    bottom: hexToRgb(liquid.bottom),
+    bulb: hexToRgb(liquid.bulb),
+  }
+})
+
+// The palette look at time t, as a smooth blend (no random pick). It follows
+// the same hold and fade as pickColor. The player and the liquid use it.
+export function paletteLookAt(t) {
+  const { hold, fade } = PALETTE_SHIFT
+  const step = Math.floor(t / (hold + fade))
+  const k = smoothstep(hold, hold + fade, t - step * (hold + fade))
+  const a = paletteLooks[paletteAt(step)]
+  const b = paletteLooks[paletteAt(step + 1)]
+  const look = {}
+  for (const key in a) look[key] = lerpRgb(a[key], b[key], k)
+  return look
 }
 
 // Mostly small, sometimes big. Higher skew = rarer big ones.
